@@ -1,2 +1,4 @@
 *.zip
 emulator-config/*.ini
+docker-src-dir/emulator/emu/
+docker-src-dir/sys_img/platform-tools/
