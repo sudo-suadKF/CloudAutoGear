@@ -12,14 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License_
 FROM alpine:3.18 AS unzipper
-RUN apk add --update unzip
+
+RUN apk add --no-cache unzip=6.0-r14
 
 # Barely changes
-FROM unzipper as sys_unzipper
+FROM unzipper AS sys_unzipper
+
 COPY android-automotive-33.zip /tmp/
-RUN unzip -u -o /tmp/android-automotive-33.zip -d /sysimg/
+
+RUN unzip -u -o /tmp/android-automotive-33.zip -d /sysimg/ && \
+  rm -rf /sysimg/data/media/0/test /sysimg/NOTICE.txt
 
 FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04
+
 ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
 
 # Now we configure the user account under which we will be running the emulator
@@ -33,7 +38,7 @@ COPY platform-tools/adb /android/sdk/platform-tools/adb
 
 ENV ANDROID_SDK_ROOT /android/sdk
 WORKDIR /android/sdk
-COPY --from=sys_unzipper /sysimg/ /android/sdk/system-images/android/
+COPY --from=sys_unzipper --chown=1000:1000 /sysimg/ /android/sdk/system-images/android/
 RUN chmod +x /android/sdk/platform-tools/adb
 
 LABEL maintainer="" \
@@ -44,7 +49,7 @@ LABEL maintainer="" \
     ro.build.flavor="sdk_gcar_x86_64-userdebug" \
     ro.product.cpu.abilist="" \
     ro.build.type="userdebug" \
-    SystemImage.TagId="android-automotive,google_apis" \
+    systemimage.tagid="android-automotive,google_apis" \
     qemu.tag="android-automotive" \
     qemu.cpu="x86_64" \
     qemu.short_tag="automotive" \
