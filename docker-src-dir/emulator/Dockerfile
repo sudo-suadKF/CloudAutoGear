@@ -38,14 +38,13 @@ RUN  mkdir -p /android-home
 
 # Make sure to place files that do not change often in the higher layers
 # as this will improve caching.
+COPY emu/ /android/sdk/
+COPY avd/ /android-home
 COPY launch-emulator.sh /android/sdk/
 COPY default.pa /etc/pulse/default.pa
 
 RUN gpasswd -a root audio && \
     chmod +x /android/sdk/launch-emulator.sh
-
-COPY emu/ /android/sdk/
-COPY avd/ /android-home
 # Create an initial snapshot so we will boot fast next time around,
 # This is currently an experimental feature, and is not easily configurable//
 # RUN --security=insecure cd /android/sdk && ./launch-emulator.sh -quit-after-boot 120
