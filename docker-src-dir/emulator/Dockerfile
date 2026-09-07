@@ -34,8 +34,9 @@ RUN echo "deb http://mirrors.kernel.org/ubuntu/ focal main restricted universe m
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Now we configure the user account under which we will be running the emulator
-RUN useradd -u 1000 -g 1000 -m -s /bin/bash emulator && \
-    gpasswd -a emulator audio
+RUN groupadd -g 1000 emulator && \
+  useradd -u 1000 -g 1000 -m -s /bin/bash emulator && \
+  gpasswd -a emulator audio
 
 RUN mkdir -p /android-home && chown 1000:1000 /android-home
 
