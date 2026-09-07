@@ -34,11 +34,14 @@ RUN mkdir -p /android/sdk/platforms && \
 
 # Make sure to place files that do not change often in the higher layers
 # as this will improve caching_
-COPY platform-tools/adb /android/sdk/platform-tools/adb
+COPY --chown=1000:1000 platform-tools/adb /android/sdk/platform-tools/adb
 
 ENV ANDROID_SDK_ROOT /android/sdk
+
 WORKDIR /android/sdk
+
 COPY --from=sys_unzipper --chown=1000:1000 /sysimg/ /android/sdk/system-images/android/
+
 RUN chmod +x /android/sdk/platform-tools/adb
 
 LABEL maintainer="" \
