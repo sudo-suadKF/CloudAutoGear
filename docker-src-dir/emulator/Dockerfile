@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM sys-33-automotive-x64:latest AS emulator
+FROM sys-33-automotive-x64:api33-build15917651 AS emulator
 
 RUN echo "deb http://mirrors.kernel.org/ubuntu/ focal main restricted universe multiverse" > /etc/apt/sources.list && \
     echo "deb http://mirrors.kernel.org/ubuntu/ focal-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
@@ -34,20 +34,17 @@ RUN echo "deb http://mirrors.kernel.org/ubuntu/ focal main restricted universe m
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Now we configure the user account under which we will be running the emulator
-RUN  mkdir -p /android-home
+RUN useradd -u 1000 -g 1000 -m -s /bin/bash emulator && \
+    gpasswd -a emulator audio
 
-# Make sure to place files that do not change often in the higher layers
-# as this will improve caching.
-COPY emu/ /android/sdk/
-COPY avd/ /android-home
-COPY launch-emulator.sh /android/sdk/
-COPY default.pa /etc/pulse/default.pa
+RUN mkdir -p /android-home && chown 1000:1000 /android-home
 
-RUN gpasswd -a root audio && \
-    chmod +x /android/sdk/launch-emulator.sh
-# Create an initial snapshot so we will boot fast next time around,
-# This is currently an experimental feature, and is not easily configurable//
-# RUN --security=insecure cd /android/sdk && ./launch-emulator.sh -quit-after-boot 120
+COPY --chown=1000:1000 emu/ /android/sdk/
+COPY --chown=1000:1000 avd/ /android-home
+COPY --chown=1000:1000 launch-emulator.sh /android/sdk/
+COPY --chown=1000:1000 default.pa /etc/pulse/default.pa
+
+RUN chmod +x /android/sdk/launch-emulator.sh
 
 # This is the console port, you usually want to keep this closed.
 EXPOSE 5554
@@ -58,6 +55,7 @@ EXPOSE 5555
 # This is the gRPC port, also useful, we don't want ADB to incorrectly identify this.
 EXPOSE 8554
 
+USER emulator
 WORKDIR /android/sdk
 
 # You will need to make use of the grpc snapshot/webrtc functionality to actually interact with
