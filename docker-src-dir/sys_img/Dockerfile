@@ -25,7 +25,7 @@ RUN unzip -u -o /tmp/android-automotive-33.zip -d /sysimg/ && \
 
 FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04
 
-ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
+ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES},display
 
 # Now we configure the user account under which we will be running the emulator
 RUN mkdir -p /android/sdk/platforms && \
@@ -36,7 +36,7 @@ RUN mkdir -p /android/sdk/platforms && \
 # as this will improve caching_
 COPY --chown=1000:1000 platform-tools/adb /android/sdk/platform-tools/adb
 
-ENV ANDROID_SDK_ROOT /android/sdk
+ENV ANDROID_SDK_ROOT=/android/sdk
 
 WORKDIR /android/sdk
 
