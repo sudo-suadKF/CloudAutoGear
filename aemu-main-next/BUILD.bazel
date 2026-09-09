@@ -1,0 +1,24 @@
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    package_name = "aemu",
+    copyright_notice = "Copyright 2024 - The Android Open Source Project",
+    license_kinds = [
+        "@rules_license//licenses/spdx:Apache-2.0",
+    ],
+    license_text = "LICENSE",
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["LICENSE"])
+
+alias(
+    name = "aemu-host-common-test-headers",
+    actual = "//host-common:test-headers",
+)

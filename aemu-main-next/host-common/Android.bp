@@ -1,0 +1,40 @@
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "hardware_google_aemu_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-Apache-2.0
+    //   SPDX-license-identifier-BSD
+    //   SPDX-license-identifier-MIT
+    default_applicable_licenses: ["hardware_google_aemu_license"],
+}
+
+cc_library_static {
+    name: "gfxstream_host_common",
+    defaults: ["gfxstream_defaults"],
+    header_libs: [
+        "aemu_common_headers",
+    ],
+    static_libs: [
+        "gfxstream_base",
+    ],
+    srcs: [
+        "empty-crash-handler.cpp",
+        "crash_reporter.cpp",
+        "feature_control.cpp",
+        "FeatureControlOverride.cpp",
+        "window_operations.cpp",
+        "logging.cpp",
+        "GfxstreamFatalError.cpp",
+
+        "AndroidPipe.cpp",
+        "HostmemIdMapping.cpp",
+        "RefcountPipe.cpp",
+        "GraphicsAgentFactory.cpp",
+
+        "hw-config.cpp",
+    ],
+    local_include_dirs: [
+        "include/host-common",
+    ],
+}

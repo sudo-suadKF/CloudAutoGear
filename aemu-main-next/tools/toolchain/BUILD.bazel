@@ -1,0 +1,202 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+load(":amc.bzl", "amc_generator", "amc_pkg_config", "amc_toolchain")
+load(":self.bzl", "py_binary_with_self_label")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "amc_common_lib",
+    srcs = [
+        "src/aemu/__init__.py",
+        "src/aemu/command.py",
+        "src/aemu/jsonc.py",
+        "src/aemu/log.py",
+        "src/aemu/process/__init__.py",
+        "src/aemu/process/runner.py",
+        "src/aemu/util.py",
+    ],
+    imports = ["src"],
+)
+
+py_library(
+    name = "amc_toolchain_lib",
+    srcs = [
+        "src/aemu/buildbot_utils.py",
+        "src/aemu/process/bazel.py",
+        "src/aemu/process/cmake.py",
+        "src/aemu/toolchain.py",
+        "src/aemu/toolchains/__init__.py",
+        "src/aemu/toolchains/binary_patcher.py",
+        "src/aemu/toolchains/darwin_generator.py",
+        "src/aemu/toolchains/factory.py",
+        "src/aemu/toolchains/linux_arm_generator.py",
+        "src/aemu/toolchains/linux_generator.py",
+        "src/aemu/toolchains/mingw_to_msvc_lib.py",
+        "src/aemu/toolchains/package_config_pc.py",
+        "src/aemu/toolchains/toolchain_generator.py",
+        "src/aemu/toolchains/windows_generator.py",
+    ],
+    data = ["src/aemu/process/introspection.cquery.bzl"],
+    imports = ["src"],
+    deps = [
+        ":amc_common_lib",
+        "@bazel_tools//tools/python/runfiles",
+    ],
+)
+
+py_library(
+    name = "amc_qemu_configure_lib",
+    srcs = [
+        "src/aemu/configure/__init__.py",
+        "src/aemu/configure/libraries.py",
+        "src/aemu/configure/meson_project_builder.py",
+    ],
+    imports = ["src"],
+    deps = [
+        ":amc_common_lib",
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_binary_with_self_label(
+    name = "amc",
+    srcs = ["src/amc.py"],
+    main = "src/amc.py",
+    deps = [
+        ":amc_common_lib",
+        ":amc_qemu_configure_lib",
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_binary(
+    name = "gen_toolchain",
+    srcs = ["src/gen_toolchain.py"],
+    imports = ["src"],
+    main = "src/gen_toolchain.py",
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_binary(
+    name = "gen_pkg_config",
+    srcs = ["src/gen_pkg_config.py"],
+    imports = ["src"],
+    main = "src/gen_pkg_config.py",
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_binary(
+    name = "gen_bazel",
+    srcs = ["src/gen_bazel.py"],
+    imports = ["src"],
+    main = "src/gen_bazel.py",
+    deps = [
+        ":amc_qemu_configure_lib",
+    ],
+)
+
+py_test(
+    name = "jsonc_test",
+    srcs = ["src/aemu/jsonc_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_common_lib",
+    ],
+)
+
+py_test(
+    name = "command_test",
+    srcs = ["src/aemu/command_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_common_lib",
+    ],
+)
+
+py_test(
+    name = "package_config_pc_test",
+    srcs = ["src/aemu/toolchains/package_config_pc_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_test(
+    name = "windows_generator_test",
+    srcs = ["src/aemu/toolchains/windows_generator_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_test(
+    name = "linux_generator_test",
+    srcs = ["src/aemu/toolchains/linux_generator_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_test(
+    name = "linux_arm_generator_test",
+    srcs = ["src/aemu/toolchains/linux_arm_generator_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+py_test(
+    name = "darwin_generator_test",
+    srcs = ["src/aemu/toolchains/darwin_generator_test.py"],
+    imports = ["src"],
+    deps = [
+        ":amc_toolchain_lib",
+    ],
+)
+
+cc_binary(
+    name = "hello",
+    srcs = ["src/hello.c"],
+)
+
+# Build a test_lib
+cc_library(
+    name = "test_lib",
+    srcs = ["tests/test_lib.c"],
+    hdrs = ["tests/test_lib.h"],
+    includes = ["tests"],
+)
+
+# Generate a pkg-config definition for test_lib
+amc_pkg_config(
+    name = "test_lib_pc",
+    package_name = "test-lib",
+    library = ":test_lib",
+    version = "1.0.0",
+)
+
+# Generate a toolchain for the test generation
+amc_toolchain(
+    name = "test_toolchain",
+    target_platform = "linux",
+    tool_versions = ":test_tool_versions.json",
+)
+
+# Run a test meson to bazel generation
+amc_generator(
+    name = "test_generator",
+    srcs = ["README.md"],
+    config = "//tools/toolchain/tests/amc/simple:build-config.jsonc",
+    packages = [":test_lib_pc"],
+    target_platform = "linux",
+    toolchain = ":test_toolchain",
+)
