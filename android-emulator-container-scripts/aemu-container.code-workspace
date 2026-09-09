@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "js/src/android_emulation_control"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.formatting.provider": "none",
+		"[python]": {
+			"editor.defaultFormatter": "ms-python.black-formatter"
+		}
+	}
+}
