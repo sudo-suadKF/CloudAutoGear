@@ -289,7 +289,7 @@ export default class WsJsepProtocol {
   _handleStart = async (config: RTCConfiguration) => {
     const localOnlyConfig: RTCConfiguration = {
       ...config,
-      iceServers: []
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     };
 
     this.peerConnection = new RTCPeerConnection(localOnlyConfig);
