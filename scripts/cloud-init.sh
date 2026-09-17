@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -euo pipefail
+
+export HOME=/root
+
 sudo apt update
 sudo apt install -y python3 python3-venv python3-pip make protobuf-compiler git curl unzip openjdk-17-jdk
 
@@ -11,12 +15,7 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 newgrp docker
 
-sudo apt-get install -y ca-certificates gnupg
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-sudo apt update
-sudo apt install -y nodejs
+sudo apt install -y nodejs npm
 
 mkdir -p ~/android-sdk/cmdline-tools
 cd ~/android-sdk/cmdline-tools
@@ -24,10 +23,11 @@ curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlineto
 unzip -q cmdline-tools.zip
 mv cmdline-tools latest
 rm cmdline-tools.zip
+export ANDROID_HOME=$HOME/android-sdk
+export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
 echo 'export ANDROID_HOME=$HOME/android-sdk' >> ~/.bashrc
 echo 'export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH' >> ~/.bashrc
-source ~/.bashrc
-yes | sdkmanager --licenses
+(set +o pipefail; yes | sdkmanager --licenses)
 sdkmanager --install "platform-tools"
 
 cd ~
@@ -58,13 +58,12 @@ adb connect localhost:5555
 mkdir -p ~/CloudAutoGear/emulator-config
 docker cp "$CONTAINER_ID":/home/emulator/.android/avd/running/pid_1.ini ~/CloudAutoGear/emulator-config/pid_1.ini
 
+export BAZEL_ROOT=$HOME/CloudAutoGear/aemu-main-next
 echo 'export BAZEL_ROOT=$HOME/CloudAutoGear/aemu-main-next' >> ~/.bashrc
-source ~/.bashrc
 cd ~/CloudAutoGear/android-emulator-container-scripts/gateway
 ./setup_env.sh
 source venv/bin/activate
-nohup videobridge-gateway --port=8080 --discovery_file ~/CloudAutoGear/emulator-config/pid_1.ini > ~/gateway.log 2>&1 &
-disown
+sudo systemd-run --unit=aaos-gateway /root/CloudAutoGear/android-emulator-container-scripts/gateway/venv/bin/videobridge-gateway --port=8080 --discovery_file /root/CloudAutoGear/emulator-config/pid_1.ini
 
 cd ~/CloudAutoGear/android-emulator-container-scripts/js
 npm ci
@@ -73,8 +72,7 @@ cd example
 npm ci
 
 cd ~/CloudAutoGear/android-emulator-container-scripts/js/example
-nohup npm run dev -- --host 0.0.0.0 > ~/frontend.log 2>&1 &
-disown
+sudo systemd-run --unit=aaos-frontend --working-directory=/root/CloudAutoGear/android-emulator-container-scripts/js/example npm run dev -- --host 0.0.0.0
 
 cd ~/CloudAutoGear/car-samples/car-lib/CarGearViewerKotlin
 ./gradlew :automotive:assembleDebug
